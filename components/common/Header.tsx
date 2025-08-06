@@ -1,20 +1,47 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { renderToStringWithData } from '@apollo/client/react/ssr';
 
+interface UserData{
+  id: string;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
 type HeaderProps = {
   onMenuPress?: () => void;
+  userData?: UserData | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuPress }) => (
-  <View style={styles.header}>
-    <Text style={styles.title}>Cyrus Musau</Text>
-    <Text style={styles.username}>@cyrus</Text>
-    <TouchableOpacity style={styles.menu} onPress={onMenuPress}>
-      <Ionicons name="menu" size={24} color="#FFFFFF" />
-    </TouchableOpacity>
-  </View>
-);
+const Header: React.FC<HeaderProps> = ({ onMenuPress, userData }) => {
+  const getDisplayName = () => {
+    if (!userData) return 'Loading...';
+
+    if (userData.firstName && userData.lastName){
+      return `${userData.firstName} ${userData.lastName}`;
+    } else if (userData.firstName){
+      return userData.firstName; 
+    } else {
+      return userData.lastName;
+    }
+  };
+
+  const getUsername = () => {
+    if(!userData) return '@loading';
+    return `@${userData.username}`;
+  }
+  return (
+    <View style={styles.header}>
+      <Text style={styles.title}>{getDisplayName()}</Text>
+      <Text style={styles.username}>{getUsername()}</Text>
+      <TouchableOpacity style={styles.menu} onPress={onMenuPress}>
+        <Ionicons name="menu" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   header: {

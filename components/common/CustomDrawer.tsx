@@ -3,12 +3,38 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-interface CustomDrawerProps {
-  visible: boolean;
-  onClose: () => void;
+interface UserData {
+  id: string;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
 }
 
-const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose }) => {
+type CustomDrawerProps = {
+  visible: boolean;
+  onClose: () => void;
+  userData?: UserData | null;
+}
+
+const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose, userData }) => {
+
+  const getDisplayName = () => {
+    if(!userData) return 'Loading...';
+
+    if(userData.firstName &&userData.lastName){
+      return `${userData.firstName} ${userData.lastName}`;
+    } else if (userData.firstName) {
+      return userData.firstName;
+    }else{
+      return userData.lastName;
+    }
+  };
+
+  const getUsername = () => {
+    if(!userData) return '@loading';
+    return `@${userData.username}`;
+  }
   return (
     <Modal
       animationType="slide"
@@ -20,8 +46,8 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose }) => {
         <View style={styles.container}>
           <View style={styles.profileSection}>
             <View style={styles.avatar} />
-            <Text style={styles.name}>Cyrus Musau</Text>
-            <Text style={styles.username}>@cyrus</Text>
+            <Text style={styles.name}>{getDisplayName()}</Text>
+            <Text style={styles.username}>{getUsername()}</Text>
             <Text style={styles.bio}>Full-stack engineer based in Kenya 🇰🇪{"\n"}Coffee + code = my vibe ☕💻</Text>
           </View>
 

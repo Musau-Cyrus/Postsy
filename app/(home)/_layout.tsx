@@ -33,8 +33,6 @@ const HomeRootLayout = () => {
                 },
             }} />
             <Tabs.Screen name="search" options={{
-                title: "Search",
-                headerShown: true,
                 tabBarIcon: ({ color }) =>
                     <Feather name="search" size={24} color={color}/>,
                 headerStyle: {
@@ -43,7 +41,7 @@ const HomeRootLayout = () => {
             }}/>
             <Tabs.Screen name="new_post" options={{
                 title: "New",
-                headerShown: true,
+                headerShown: false,
                 tabBarIcon: ({ color }) =>
                     <AntDesign name="plus" size={24} color={color}/>,
                 headerStyle: {

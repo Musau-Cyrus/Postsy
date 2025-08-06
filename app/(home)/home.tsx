@@ -1,9 +1,9 @@
 import CustomDrawer from "@/components/common/CustomDrawer";
 import { CustomHeader } from "@/components/common/CustomHeader";
-import { styles } from "@/styles/_login";
+import PostCard from "@/components/PostCard";
 import { useState } from "react";
-import { View, Text, ScrollView } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { View, ScrollView } from "react-native";
+import { SafeAreaProvider, } from "react-native-safe-area-context";
 
 const Home = () => {
      const [drawerVisible, setDrawerVisible] = useState(false);
@@ -16,16 +16,68 @@ const Home = () => {
         setDrawerVisible(false);
     };
     return(
-        <SafeAreaProvider style={{backgroundColor: '#0e1621'}}>
-            <CustomHeader title="Postsy" onMenuPress={handleMenuPress}/>
-            <SafeAreaView style={styles.container}>
-                <ScrollView style={{ flex: 1 }}>
-                    <View style={{alignItems: 'center', justifyContent: 'center', paddingTop: 20}}>
-                        <Text style={{color: 'white'}}>Welcome to Postsy!</Text>
-                    </View>
+        <SafeAreaProvider style={{backgroundColor: '#0b1120'}}>
+            <View style={{paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#1e293b',}}>
+                <CustomHeader title="Postsy" onMenuPress={handleMenuPress}/>
+            </View>
+                <ScrollView style={{ flex: 1, paddingTop: 16 }}>
+                  <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                    <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
+                        <PostCard
+                            username="Cyrus Musau"
+                            handle="cyrus"
+                            timeAgo="2h"
+                            text="Loving the new React Native layout I built.\nPurple theme hits different 💜🔥"
+                        />
                 </ScrollView>
-                <CustomDrawer visible={drawerVisible} onClose={handleCloseDrawer} />
-            </SafeAreaView>
+                <CustomDrawer visible={drawerVisible} onClose={handleCloseDrawer}/>
+            
         </SafeAreaProvider>
     )
 }
