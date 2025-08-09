@@ -1,7 +1,8 @@
 import HeaderButton from "@/components/common/HeaderButton";
 import PostInput from "@/components/common/PostInput";
-import React from "react";
-import { SafeAreaView } from "react-native";
+import { router } from "expo-router";
+import React, { useState } from "react";
+import { Alert, SafeAreaView } from "react-native";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -11,7 +12,7 @@ const NewPost = () => {
       <SafeAreaView style={styles.container}>
         {/* Header - Fixed at top */}
         <View style={styles.headerContainer}>
-          <HeaderButton label="New Post" onPress={() => console.log("Explore pressed")} />
+          <HeaderButton label="New Post" onPress={() => router.push('/(home)/home')} />
         </View>
 
         <View style={{marginTop: 16, marginHorizontal: 16,}}>

@@ -112,7 +112,7 @@ const ProfileScreen: React.FC = () => {
       <SafeAreaProvider>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
-            <Text>Loading profile...</Text>
+            <Text style={{color: 'white'}}>Loading profile...</Text>
           </View>
         </SafeAreaView>
       </SafeAreaProvider>

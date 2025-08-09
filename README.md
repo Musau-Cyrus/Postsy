@@ -4,17 +4,16 @@
 Posty is a cross-platform social media mobile application built using React Native, styled with NativeWind (Tailwind for React Native), and written in TypeScript. The goal of Posty is to provide a clean and interactive platform Wwhere users sign in or register to share posts, view feeds, and interact with other users in a minimal and responsive design.
 
 ## Tech Stack
-| Technology   | Purpose                          |
-|--------------|----------------------------------|
-| React Native | Mobile app framework             |
-| TypeScript   | Type safety                      |
-| NativeWind   | Tailwind-based styling           |
-| Figma        | UI/UX design                     |
-|              |                                  |
+- [Expo](https://expo.dev/) — Fast React Native development
+- [React Native](https://reactnative.dev/) — Cross-platform mobile framework
+- [TypeScript](https://www.typescriptlang.org/) — Type safety & better development experience
+- [NativeWind](https://www.nativewind.dev/) — Tailwind CSS for React Native
+- [GraphQL](https://graphql.org/) — API queries and mutations
+
 
 ## UI/UX Design
 Postsy UI/UX was designed in figma before the actual implemetation.<br/>
-Use this link to View the UI design: <a> Link to figma</a>
+Use this link to View the UI design: <a href='https://www.figma.com/design/Tic6IbsolxTQxUtgF0PtTe/Social-Media-Feed-APP?node-id=48-29&t=ba2dw3EFJf4flQcJ-1'> Link to figma</a>
 
 ## Screenshots
 <ul>
@@ -132,3 +131,16 @@ npx expo start
 - Role-based features (admin, verified users, etc.)
 - Direct messaging
 - Push notifications
+
+## Contributing
+Contributions are welcome!<br/>To contribute:
+
+1. Fork the project
+2. Create a new branch (git checkout -b feature-branch)
+3. Commit your changes (git commit -m 'Add new feature')
+4. Push to the branch (git push origin feature-branch)
+4. Open a Pull Request
+
+### 👨‍💻 Author
+Developed by **Cyrus Musau**<br/>
+<a href='https://www.linkedin.com/in/cyrus-musau/'>LinkedIn</a>

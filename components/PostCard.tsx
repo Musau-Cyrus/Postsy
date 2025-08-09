@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet } from "react-native";
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import { HeartIcon, ChatBubbleOvalLeftIcon, ArrowPathIcon, ShareIcon, EllipsisHorizontalIcon } from "react-native-heroicons/outline";
+import { HeartIcon as HeartIconSolid } from "react-native-heroicons/solid";
 
 interface PostCardProps {
   avatarUrl?: string;
@@ -21,6 +22,13 @@ const PostCard: React.FC<PostCardProps> = ({
   text,
   imageUrl,
 }) => {
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState("");
+
+  const handleLikePress = () => {
+    setIsLiked(!isLiked);
+    //setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+  };
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -58,8 +66,12 @@ const PostCard: React.FC<PostCardProps> = ({
         <TouchableOpacity>
           <ArrowPathIcon color="gray" size={24} />
         </TouchableOpacity>
-        <TouchableOpacity style={{flexDirection: 'row'}}>
-          <HeartIcon color="gray" size={24} />
+        <TouchableOpacity style={{flexDirection: 'row'}} onPress={handleLikePress}>
+          {isLiked ? (
+            <HeartIconSolid color="#ef4444" size={24} />
+          ) : (
+            <HeartIcon color="gray" size={24} />
+          )}
           <Text style={{color: 'white', paddingLeft:4}}>178</Text>
         </TouchableOpacity>
         <TouchableOpacity>

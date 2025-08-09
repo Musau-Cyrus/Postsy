@@ -1,4 +1,5 @@
 import HeaderButton from "@/components/common/HeaderButton";
+import { router } from "expo-router";
 import React from "react";
 import { Alert, SafeAreaView, ScrollView } from "react-native";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
@@ -11,7 +12,7 @@ const ExploreScreen = () => {
       <SafeAreaView style={styles.container}>
         {/* Header - Fixed at top */}
         <View style={styles.headerContainer}>
-          <HeaderButton label="Explore" onPress={() => console.log("Explore pressed")} />
+          <HeaderButton label="Explore" onPress={() => router.push('/(home)/home')} />
         </View>
 
         {/* Scrollable Content */}
