@@ -18,6 +18,225 @@ export interface Post {
     commentsCount: number;
 }
 
+export interface Comment {
+    id: string;
+    content: string;
+    author: {
+        id: string;
+        username: string;
+        firstName?: string;
+        lastName?: string;
+    };
+    createdAt: string;
+}
+
+export const getComments = async (postId: string): Promise<Comment[]> => {
+    if (!postId) return [];
+    const selection = `{
+        id
+        content
+        createdAt
+        user { id username firstName lastName }
+        author { id username firstName lastName }
+    }`;
+
+    // Direct list fields
+    const direct = [
+        { field: 'comments', arg: 'postId', varType: 'ID!' },
+        { field: 'postComments', arg: 'postId', varType: 'ID!' },
+        { field: 'comments', arg: 'id', varType: 'ID!' },
+        { field: 'postComments', arg: 'id', varType: 'ID!' },
+        { field: 'comments', arg: 'postId', varType: 'String!' },
+        { field: 'postComments', arg: 'postId', varType: 'String!' },
+        { field: 'comments', arg: 'postId', varType: 'Int!' },
+        { field: 'postComments', arg: 'postId', varType: 'Int!' },
+    ] as const;
+
+    for (const d of direct) {
+        const varDef = `$${d.arg}: ${d.varType}`;
+        const query = `
+          query GetComments(${varDef}) {
+            ${d.field}(${d.arg}: $${d.arg}) ${selection}
+          }
+        `;
+        let value: any = postId;
+        if (d.varType === 'Int!') {
+            const n = Number(postId);
+            value = Number.isFinite(n) ? n : postId;
+        }
+        try {
+            const res = await tryGraphQLWithSchemes({ query, variables: { [d.arg]: value } });
+            if (res?.errors) continue;
+            const root = res?.data?.[d.field];
+            const list = normalizeList(root);
+            if (Array.isArray(list)) {
+                return list.map((c: any) => {
+                    const a = c.user || c.author || {};
+                    return {
+                        id: String(c.id),
+                        content: String(c.content || ''),
+                        author: { id: String(a.id || ''), username: String(a.username || ''), firstName: a.firstName, lastName: a.lastName },
+                        createdAt: String(c.createdAt || new Date().toISOString()),
+                    } as Comment;
+                });
+            }
+        } catch {}
+    }
+
+    // Nested under post
+    const nested = [
+        { arg: 'id', varType: 'ID!' },
+        { arg: 'postId', varType: 'ID!' },
+        { arg: 'id', varType: 'String!' },
+        { arg: 'id', varType: 'Int!' },
+    ] as const;
+    for (const n of nested) {
+        const varDef = `$${n.arg}: ${n.varType}`;
+        const query = `
+          query GetPostComments(${varDef}) {
+            post(${n.arg}: $${n.arg}) { comments ${selection} }
+          }
+        `;
+        let value: any = postId;
+        if (n.varType === 'Int!') {
+            const num = Number(postId);
+            value = Number.isFinite(num) ? num : postId;
+        }
+        try {
+            const res = await tryGraphQLWithSchemes({ query, variables: { [n.arg]: value } });
+            if (res?.errors) continue;
+            const list = normalizeList(res?.data?.post?.comments);
+            if (Array.isArray(list)) {
+                return list.map((c: any) => {
+                    const a = c.user || c.author || {};
+                    return {
+                        id: String(c.id),
+                        content: String(c.content || ''),
+                        author: { id: String(a.id || ''), username: String(a.username || ''), firstName: a.firstName, lastName: a.lastName },
+                        createdAt: String(c.createdAt || new Date().toISOString()),
+                    } as Comment;
+                });
+            }
+        } catch {}
+    }
+
+    return [];
+};
+
+export const addComment = async (postId: string, content: string): Promise<Comment | null> => {
+    if (!postId || !content?.trim()) return null;
+    const selection = `{
+        id
+        content
+        createdAt
+        user { id username firstName lastName }
+        author { id username firstName lastName }
+    }`;
+
+    const mutations = [
+        { name: 'addComment', arg: 'postId' },
+        { name: 'addCommentToPost', arg: 'postId' },
+        { name: 'createComment', arg: 'postId' },
+        { name: 'createPostComment', arg: 'postId' },
+        { name: 'commentOnPost', arg: 'postId' },
+        { name: 'addPostComment', arg: 'postId' },
+        { name: 'addComment', arg: 'id' },
+        { name: 'createComment', arg: 'id' },
+    ] as const;
+
+    const contentArgs = ['content', 'text', 'message', 'body', 'comment'] as const;
+    const varTypes = ['ID!', 'String!', 'Int!'] as const;
+    let lastErrorMsg: string | null = null;
+
+    // Wrapper with comment field
+    for (const m of mutations) {
+        for (const t of varTypes) {
+            for (const cArg of contentArgs) {
+                const varDef = `$${m.arg}: ${t}, $${cArg}: String!`;
+                const args = `${m.arg}: $${m.arg}, ${cArg}: $${cArg}`;
+                const query = `
+                  mutation AddComment(${varDef}) {
+                    ${m.name}(${args}) {
+                      comment ${selection}
+                      ok
+                      success
+                      message
+                    }
+                  }
+                `;
+                let value: any = postId;
+                if (t === 'Int!') {
+                    const n = Number(postId);
+                    value = Number.isFinite(n) ? n : postId;
+                }
+                try {
+                    const res = await tryGraphQLWithSchemes({ query, variables: { [m.arg]: value, [cArg]: content.trim() } });
+                    if (res?.errors) { lastErrorMsg = res.errors?.[0]?.message || lastErrorMsg; continue; }
+                    const root = res?.data?.[m.name];
+                    const node = root?.comment || (root?.id ? root : null);
+                    if (node) {
+                        const a = node.user || node.author || {};
+                        const mapped: Comment = {
+                            id: String(node.id),
+                            content: String(node.content || ''),
+                            author: { id: String(a.id || ''), username: String(a.username || ''), firstName: a.firstName, lastName: a.lastName },
+                            createdAt: String(node.createdAt || new Date().toISOString()),
+                        };
+                        return mapped;
+                    }
+                    // If we got ok/success only, refetch comments and return latest
+                    if (root && (root.ok === true || root.success === true)) {
+                        const list = await getComments(String(value));
+                        if (list.length) return list[0];
+                        return null;
+                    }
+                } catch (e: any) {
+                    lastErrorMsg = e?.message || lastErrorMsg;
+                }
+            }
+        }
+    }
+
+    // Object return (no wrapper)
+    for (const m of mutations) {
+        for (const t of varTypes) {
+            for (const cArg of contentArgs) {
+                const varDef = `$${m.arg}: ${t}, $${cArg}: String!`;
+                const args = `${m.arg}: $${m.arg}, ${cArg}: $${cArg}`;
+                const query = `
+                  mutation AddComment(${varDef}) {
+                    ${m.name}(${args}) ${selection}
+                  }
+                `;
+                let value: any = postId;
+                if (t === 'Int!') {
+                    const n = Number(postId);
+                    value = Number.isFinite(n) ? n : postId;
+                }
+                try {
+                    const res = await tryGraphQLWithSchemes({ query, variables: { [m.arg]: value, [cArg]: content.trim() } });
+                    if (res?.errors) { lastErrorMsg = res.errors?.[0]?.message || lastErrorMsg; continue; }
+                    const node = res?.data?.[m.name];
+                    if (!node) continue;
+                    const a = node.user || node.author || {};
+                    const mapped: Comment = {
+                        id: String(node.id),
+                        content: String(node.content || ''),
+                        author: { id: String(a.id || ''), username: String(a.username || ''), firstName: a.firstName, lastName: a.lastName },
+                        createdAt: String(node.createdAt || new Date().toISOString()),
+                    };
+                    return mapped;
+                } catch (e: any) {
+                    lastErrorMsg = e?.message || lastErrorMsg;
+                }
+            }
+        }
+    }
+
+    if (lastErrorMsg) throw new Error(lastErrorMsg);
+    return null;
+};
+
 const isAuthErrorMessage = (msg: string) => {
     const m = (msg || '').toLowerCase();
     return m.includes('logged in') || m.includes('unauthorized') || m.includes('authentication') || m.includes('forbidden') || m.includes('not authenticated');
@@ -628,7 +847,6 @@ export const getPosts = async (): Promise<Post[]> => {
     return combined;
 };
 
-// Re-authentication helpers and simple auth checks
 export const checkAuthStatus = async (): Promise<boolean> => {
     try {
         const token = await AuthService.getToken();
@@ -641,23 +859,18 @@ export const checkAuthStatus = async (): Promise<boolean> => {
 export const testAuthWithSimpleQuery = async () => {
     try {
         const headers = await getAuthHeaders();
-        console.log('🧪 Testing auth with simple query...');
         const response = await fetch(API_URL, {
             method: 'POST',
             headers,
             body: JSON.stringify({
                 query: `
-                    query {
-                        me { id username }
-                    }
+                    query { me { id username } }
                 `
             }),
         });
         const result = await response.json();
-        console.log('🧪 Auth test result:', JSON.stringify(result, null, 2));
         return result;
     } catch (error) {
-        console.error('🧪 Auth test failed:', error);
         return null;
     }
 };

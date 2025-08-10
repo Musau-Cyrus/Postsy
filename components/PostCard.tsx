@@ -119,23 +119,6 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  const openComments = () => {
-    if (!postId) return;
-    const href = {
-      pathname: "/post/[id]",
-      params: {
-        id: postId,
-        content,
-        handle,
-        username,
-        time: timeAgo,
-        likes: String(likesCount ?? 0),
-        comments: String(commentsCount ?? 0),
-      },
-    } as any;
-    router.push(href);
-  };
-
   if (isDeleted) return null;
 
   return (
@@ -211,7 +194,7 @@ const PostCard: React.FC<PostCardProps> = ({
       {/* Footer */}
       {!isEditing && (
         <View style={styles.footer}>
-          <TouchableOpacity style={{flexDirection: 'row'}} onPress={openComments}>
+          <TouchableOpacity style={{flexDirection: 'row'}} disabled>
             <ChatBubbleOvalLeftIcon color="gray" size={24} />
             <Text style={{color: 'white', paddingLeft:4}}>{commentsCount ?? 0}</Text>
           </TouchableOpacity>

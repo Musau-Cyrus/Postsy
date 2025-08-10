@@ -77,6 +77,7 @@ const Home = () => {
         if (diffInHours < 24) return `${diffInHours}h`;
         return `${Math.floor(diffInHours / 24)}d`;
     };
+
     return(
         <SafeAreaProvider style={{backgroundColor: '#0b1120'}}>
             <View style={{paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#1e293b',}}>
@@ -146,19 +147,24 @@ const Home = () => {
                     </View>
                 )}
 
+                {/* Main feed */}
                 {!isLoading && posts.length > 0 && (
                     posts.map((post) => (
                         <PostCard
                             key={post.id}
-                            postId={post.id}
                             username={`${post.author.firstName || ''} ${post.author.lastName || ''}`.trim() || post.author.username}
                             handle={post.author.username}
                             timeAgo={formatTimeAgo(post.createdAt)}
                             text={post.content}
+                            postId={post.id}
                             likesCount={post.likesCount}
                             commentsCount={post.commentsCount}
-                            onDelete={() => setPosts(prev => prev.filter(p => p.id !== post.id))}
-                            onEdit={async () => { await fetchPosts(); }}
+                            onDelete={() => {
+                                setPosts(prev => prev.filter(p => p.id !== post.id));
+                            }}
+                            onEdit={() => {
+                                fetchPosts();
+                            }}
                         />
                     ))
                 )}

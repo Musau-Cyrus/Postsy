@@ -1,11 +1,14 @@
-import React, { useState } from "react";
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, Image } from "react-native";
-import { PaperAirplaneIcon, PhotoIcon, CameraIcon } from "react-native-heroicons/outline";
+import { createPost, Post as PostType } from '@/services/postService';
 import * as ImagePicker from 'expo-image-picker';
-import { createPost } from '@/services/postService';
+import React, { useState } from "react";
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { CameraIcon, PaperAirplaneIcon, PhotoIcon } from "react-native-heroicons/outline";
 
+interface PostInputProps {
+  onPosted?: (post: PostType) => void;
+}
 
-const PostInput = () => {
+const PostInput: React.FC<PostInputProps> = ({ onPosted }) => {
   const [text, setText ] = useState('');
   const [selectedImage, setSelectedImage ] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,15 +20,10 @@ const PostInput = () => {
     }
 
     setIsLoading(true);
-    
     try {
-      console.log('Creating post with text:', text);
-      
       const newPost = await createPost(text.trim());
-      
       if (newPost) {
-        console.log('Post created successfully:', newPost);
-        Alert.alert('Success', 'Post created successfully!');
+        onPosted?.(newPost);
         setText('');
         setSelectedImage(null);
       } else {
@@ -37,41 +35,31 @@ const PostInput = () => {
     } finally {
       setIsLoading(false);
     }
-        setText('');
-        setSelectedImage(null)
     };
 
     const pickImage = async () => {
-        //Asking for Permision from user
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if( status !== "granted"){
             Alert.alert("Permision Required!")
             return;
         }
-
-        //Launch the image picker
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
         });
-
         if (!result.canceled){
             setSelectedImage(result.assets[0].uri);
-            console.log("Selected Image", result.assets[0].uri )
         }
     };
 
     const takePhoto = async () => {
-        //Ask for user permision to access camera
         const { status } = await ImagePicker.requestCameraPermissionsAsync()
         if ( status !== "granted"){
             Alert.alert("Camera permission required!")
             return;
         }
-
-        //Launch camera
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes:ImagePicker.MediaTypeOptions.Images,
             allowsEditing:true,
@@ -80,7 +68,6 @@ const PostInput = () => {
         })
         if (!result.canceled){
             setSelectedImage(result.assets[0].uri);
-            console.log("Captured Image", result.assets[0].uri)
         }
     }
 
@@ -94,6 +81,7 @@ const PostInput = () => {
         onChangeText={setText}
         multiline
         style={{color: 'white'}}
+        editable={!isLoading}
       />
        {/* Preview selected image */}
       {selectedImage && (
@@ -107,11 +95,11 @@ const PostInput = () => {
       {/* Actions */}
       <View style={styles.action}>
         <View style={styles.mediaButtons}>
-            <TouchableOpacity onPress={pickImage} style={styles.mediaButton}>
+            <TouchableOpacity onPress={pickImage} style={styles.mediaButton} disabled={isLoading}>
           <PhotoIcon color="#94a3b8" size={24} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={takePhoto} style={styles.mediaButton}>
+        <TouchableOpacity onPress={takePhoto} style={styles.mediaButton} disabled={isLoading}>
             <CameraIcon color='#94a3b8' size={24}/>
         </TouchableOpacity>
         </View>
@@ -120,8 +108,9 @@ const PostInput = () => {
         <TouchableOpacity
           onPress={handlePost}
           style = {styles.postButton}
+          disabled={isLoading}
         >
-          <Text style={styles.text}>Post</Text>
+          <Text style={styles.text}>{isLoading ? 'Posting...' : 'Post'}</Text>
           <PaperAirplaneIcon color="#94a3b8" size={18} />
         </TouchableOpacity>
       </View>

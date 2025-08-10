@@ -1,11 +1,13 @@
 import HeaderButton from "@/components/common/HeaderButton";
 import { router } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, ActivityIndicator, SafeAreaView, ScrollView } from "react-native";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { MagnifyingGlassIcon} from "react-native-heroicons/outline";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { searchUsers, User } from "@/services/searchService";
+import { getPosts, Post } from "@/services/postService";
+import PostCard from "@/components/PostCard";
 
 const ExploreScreen = () => {
   const [query, setQuery] = useState('');
@@ -13,6 +15,9 @@ const ExploreScreen = () => {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
   const debouncer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Trending posts state
+  const [trending, setTrending] = useState<Post[]>([]);
 
   const onChangeText = (text: string) => {
     setTouched(true);
@@ -44,6 +49,25 @@ const ExploreScreen = () => {
     };
   }, []);
 
+  // Fetch trending posts (last hour, by likes desc)
+  const fetchTrending = async () => {
+    try {
+      const all = await getPosts();
+      const nowTs = Date.now();
+      const recent = all.filter(p => (nowTs - new Date(p.createdAt).getTime()) < 60 * 60 * 1000);
+      const sorted = recent.sort((a, b) => (b.likesCount - a.likesCount) || (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setTrending(sorted);
+    } catch (e) {
+      console.warn('Failed to load trending:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrending();
+    const id = setInterval(fetchTrending, 60 * 1000); // refresh every minute
+    return () => clearInterval(id);
+  }, []);
+
   const onSubmit = async () => {
     if (!query.trim()) return;
     setTouched(true);
@@ -58,6 +82,16 @@ const ExploreScreen = () => {
       setLoading(false);
     }
   };
+
+  const formatTimeAgo = (dateString: string) => {
+    const postDate = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60));
+    if (diffInHours < 1) return 'now';
+    if (diffInHours < 24) return `${diffInHours}h`;
+    return `${Math.floor(diffInHours / 24)}d`;
+  };
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -101,7 +135,7 @@ const ExploreScreen = () => {
             </TouchableOpacity>
           </View>
 
-           {/* Results */}
+          {/* Results */}
           <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
             {loading ? (
               <View style={{ paddingVertical: 24, alignItems: 'center' }}>
@@ -112,7 +146,6 @@ const ExploreScreen = () => {
                 <TouchableOpacity
                   key={u.id}
                   onPress={() => {
-                    // Navigate to profile screen if available; adjust route as needed
                     // router.push(`/(home)/profile/${u.id}`);
                     Alert.alert('User', `${u.username}${u.firstName ? ` (${u.firstName} ${u.lastName ?? ''})` : ''}`);
                   }}
@@ -141,18 +174,27 @@ const ExploreScreen = () => {
             ) : null}
           </View>
 
-          {/* Content */}
-          <View style={{
-            marginTop: 16,
-            paddingHorizontal: 16,
-          }}>
-            <Text style={{
-              color: 'white',
-              fontSize: 18,
-              fontWeight: '600',
-              marginBottom: 12,
-            }}>Trending Now</Text>
-            {/* You can map trending posts here */}
+          {/* Trending Now */}
+          <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+            <Text style={{ color: 'white', fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
+              Trending Now
+            </Text>
+            {trending.length === 0 ? (
+              <Text style={{ color: '#94a3b8' }}>No trending posts in the last hour.</Text>
+            ) : (
+              trending.map((post) => (
+                <PostCard
+                  key={`tr-${post.id}`}
+                  username={`${post.author.firstName || ''} ${post.author.lastName || ''}`.trim() || post.author.username}
+                  handle={post.author.username}
+                  timeAgo={formatTimeAgo(post.createdAt)}
+                  text={post.content}
+                  postId={post.id}
+                  likesCount={post.likesCount}
+                  commentsCount={post.commentsCount}
+                />
+              ))
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>

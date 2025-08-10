@@ -1,22 +1,24 @@
 import HeaderButton from "@/components/common/HeaderButton";
 import PostInput from "@/components/common/PostInput";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { Alert, SafeAreaView } from "react-native";
-import { View, StyleSheet } from "react-native";
+import React from "react";
+import { SafeAreaView, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const NewPost = () => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {/* Header - Fixed at top */}
+        {/* Header*/}
         <View style={styles.headerContainer}>
           <HeaderButton label="New Post" onPress={() => router.push('/(home)/home')} />
         </View>
 
         <View style={{marginTop: 16, marginHorizontal: 16,}}>
-            <PostInput/>
+            <PostInput onPosted={() => {
+              // Navigate to Home after successful posting
+              router.replace('/(home)/home');
+            }}/>
         </View>
         
 
