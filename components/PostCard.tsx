@@ -1,3 +1,4 @@
+import CommentsSection from "@/components/CommentsSection";
 import { deletePost, updatePost } from "@/services/postService";
 import { followUser } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,8 +49,11 @@ const PostCard: React.FC<PostCardProps> = ({
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [localCommentsCount, setLocalCommentsCount] = useState<number>(commentsCount || 0);
 
   useEffect(() => { setContent(text); }, [text]);
+  useEffect(() => { setLocalCommentsCount(commentsCount || 0); }, [commentsCount]);
 
   useEffect(() => {
     (async () => {
@@ -194,9 +198,9 @@ const PostCard: React.FC<PostCardProps> = ({
       {/* Footer */}
       {!isEditing && (
         <View style={styles.footer}>
-          <TouchableOpacity style={{flexDirection: 'row'}} disabled>
+          <TouchableOpacity style={{flexDirection: 'row'}} onPress={() => setShowComments(v => !v)}>
             <ChatBubbleOvalLeftIcon color="gray" size={24} />
-            <Text style={{color: 'white', paddingLeft:4}}>{commentsCount ?? 0}</Text>
+            <Text style={{color: 'white', paddingLeft:4}}>{localCommentsCount ?? 0}</Text>
           </TouchableOpacity>
           <TouchableOpacity>
             <ArrowPathIcon color="gray" size={24} />
@@ -213,6 +217,15 @@ const PostCard: React.FC<PostCardProps> = ({
             <ShareIcon color="gray" size={24} />
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Comments inline */}
+      {showComments && !isEditing && postId && (
+        <CommentsSection
+          postId={postId}
+          initialCount={localCommentsCount}
+          onCountChange={setLocalCommentsCount}
+        />
       )}
 
       {/* Inline anchored menu */}

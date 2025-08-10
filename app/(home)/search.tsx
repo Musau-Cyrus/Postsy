@@ -1,13 +1,12 @@
 import HeaderButton from "@/components/common/HeaderButton";
+import PostCard from "@/components/PostCard";
+import { getPosts, Post } from "@/services/postService";
+import { searchUsers, User } from "@/services/searchService";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, ActivityIndicator, SafeAreaView, ScrollView } from "react-native";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { MagnifyingGlassIcon} from "react-native-heroicons/outline";
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { searchUsers, User } from "@/services/searchService";
-import { getPosts, Post } from "@/services/postService";
-import PostCard from "@/components/PostCard";
 
 const ExploreScreen = () => {
   const [query, setQuery] = useState('');
