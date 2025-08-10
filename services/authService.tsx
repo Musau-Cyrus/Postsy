@@ -95,6 +95,7 @@ export class AuthService {
             result?.data?.login?.access ??
             result?.data?.login?.token ??
             result?.data?.login?.jwt ??
+            result?.data?.loginUser?.token ??
             result?.token ??
             result?.accessToken ??
             result?.access;
@@ -109,6 +110,7 @@ export class AuthService {
         // Optionally persist user payload if present
         const user =
             result?.data?.login?.user ??
+            result?.data?.loginUser?.user ??
             result?.data?.me ??
             result?.user ??
             null;

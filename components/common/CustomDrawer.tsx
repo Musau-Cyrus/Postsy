@@ -1,6 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 interface UserData {
@@ -9,6 +10,7 @@ interface UserData {
   email: string;
   firstName?: string;
   lastName?: string;
+  avatarUrl?: string | null;
 }
 
 type CustomDrawerProps = {
@@ -18,6 +20,23 @@ type CustomDrawerProps = {
 }
 
 const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose, userData }) => {
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (userData?.id) {
+          const key = `avatar:${userData.id}`;
+          const saved = await AsyncStorage.getItem(key);
+          if (mounted) setLocalAvatarUri(saved);
+        } else {
+          if (mounted) setLocalAvatarUri(null);
+        }
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, [userData?.id, visible]);
 
   const getDisplayName = () => {
     if(!userData) return 'Loading...';
@@ -45,7 +64,13 @@ const CustomDrawer: React.FC<CustomDrawerProps> = ({ visible, onClose, userData 
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.profileSection}>
-            <View style={styles.avatar} />
+            {localAvatarUri ? (
+              <Image source={{ uri: localAvatarUri }} style={styles.avatar} />
+            ) : userData?.avatarUrl ? (
+              <Image source={{ uri: userData.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar} />
+            )}
             <Text style={styles.name}>{getDisplayName()}</Text>
             <Text style={styles.username}>{getUsername()}</Text>
             <Text style={styles.bio}>Full-stack engineer based in Kenya 🇰🇪{"\n"}Coffee + code = my vibe ☕💻</Text>

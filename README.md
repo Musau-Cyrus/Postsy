@@ -16,16 +16,23 @@ Postsy UI/UX was designed in figma before the actual implemetation.<br/>
 Use this link to View the UI design: <a href='https://www.figma.com/design/Tic6IbsolxTQxUtgF0PtTe/Social-Media-Feed-APP?node-id=48-29&t=ba2dw3EFJf4flQcJ-1'> Link to figma</a>
 
 ## Screenshots
-<ul>
-<li>
-<b>Splash</b>
-</li>
-<li><b>Login</b></li>
-<li><b>Register</b></li>
-<li><b>Home</b></li>
-<li><b>Profle</b></li>
 
-</ul>
+<img src="assets/screenshots/Login.jpeg" alt="Login Screen" width="300"/>
+
+<img src="assets/screenshots/Register.jpeg" alt="Registration screen" width="300"/>
+
+<img src="assets/screenshots/Feed.jpeg" alt="Feed Screen" width="300"/>
+
+<img src="assets/screenshots/New.jpeg" alt="New Post Screen" width="300"/>
+
+<img src="assets/screenshots/Profile.jpeg" alt="Profile Screen" width="300"/>
+
+<img src="assets/screenshots/Profile stats.jpeg" alt="Profile stats Screen" width="300"/>
+
+<img src="assets/screenshots/Edit Profile.jpeg" alt="Edit profile Screen" width="300"/>
+
+
+
 
 ## Features
 1. <b>User authentication</b> - This includes the sign in and signup forms that ensures that users are registered or login securely to their accounts.

@@ -1,12 +1,12 @@
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, TouchableHighlight } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { styles } from "@/styles/_login";
-import Button from '../components/common/Button';
+import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from 'expo-blur';
-import { useState } from "react";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState } from "react";
+import { Alert, Image, Text, TextInput, TouchableHighlight, TouchableOpacity, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import Button from '../components/common/Button';
+import { AuthService } from '../services/authService';
 
 export default function Login() {
     const [username, setUsername] = useState('');
@@ -36,7 +36,7 @@ export default function Login() {
 
                 body: JSON.stringify({
                     query: `
-                        mutation LoginUser($username: String!, $password: String!,) {
+                        mutation LoginUser($username: String!, $password: String!) {
                         loginUser(username: $username, password: $password) {
                             token
                             user{
@@ -62,21 +62,13 @@ export default function Login() {
             console.log('Login response:', JSON.stringify(data, null, 2));
 
             if (response.ok && data.data && data.data.loginUser) {
-                const loginResult = data.data.loginUser;
+                // Centralized token + user storage
+                await AuthService.handleLoginSuccess(data);
+                // Optional: debug storage state
+                await AuthService.debugStorage();
 
-                if (loginResult.token) {
-                    // Store token for authentication
-                    await AsyncStorage.setItem('authToken', loginResult.token);
-                    console.log('Storing User Data: ', JSON.stringify(loginResult.user))
-                    await AsyncStorage.setItem('userData', JSON.stringify(loginResult.user));
-                    
-                    const storedData = await AsyncStorage.getItem('userData')
-                    console.log('Verified stored Data: ', storedData)
-                    Alert.alert('Success', 'Login successful!');
-                    router.push('/(home)/home');
-                } else {
-                    Alert.alert('Error', 'Login failed - no token received');
-                }
+                Alert.alert('Success', 'Login successful!');
+                router.push('/(home)/home');
             } else if (data.errors) {
                 const errorMessage = data.errors[0]?.message || 'Invalid credentials';
                 console.log('GraphQL errors:', data.errors);
