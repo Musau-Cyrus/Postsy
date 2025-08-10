@@ -1,8 +1,10 @@
+import { deletePost, updatePost } from "@/services/postService";
 import { followUser } from "@/services/userService";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { ArrowPathIcon, ChatBubbleOvalLeftIcon, EllipsisHorizontalIcon, HeartIcon, ShareIcon } from "react-native-heroicons/outline";
 import { HeartIcon as HeartIconSolid } from "react-native-heroicons/solid";
 
@@ -15,6 +17,9 @@ interface PostCardProps {
   imageUrl?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  postId?: string;
+  likesCount?: number;
+  commentsCount?: number;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -26,13 +31,25 @@ const PostCard: React.FC<PostCardProps> = ({
   imageUrl,
   onEdit,
   onDelete,
+  postId,
+  likesCount = 0,
+  commentsCount = 0,
 }) => {
+  const router = useRouter();
   const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [isSelf, setIsSelf] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(text);
+  const [content, setContent] = useState(text);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+
+  useEffect(() => { setContent(text); }, [text]);
 
   useEffect(() => {
     (async () => {
@@ -63,12 +80,63 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const handleEditPress = () => {
     setShowMenu(false);
-    onEdit?.();
+    setDraft(content);
+    setIsEditing(true);
   };
   const handleDeletePress = () => {
     setShowMenu(false);
-    onDelete?.();
+    setIsEditing(false);
+    setConfirmDelete(true);
   };
+
+  const saveEdit = async () => {
+    if (!postId) return;
+    try {
+      setSavingEdit(true);
+      const updated = await updatePost(postId, draft.trim());
+      if (updated) {
+        setContent(updated.content);
+        onEdit?.();
+        setIsEditing(false);
+      }
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const confirmDeleteNow = async () => {
+    if (!postId) return;
+    try {
+      setDeleting(true);
+      const ok = await deletePost(postId);
+      if (ok) {
+        setIsDeleted(true);
+        onDelete?.();
+        setConfirmDelete(false);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openComments = () => {
+    if (!postId) return;
+    const href = {
+      pathname: "/post/[id]",
+      params: {
+        id: postId,
+        content,
+        handle,
+        username,
+        time: timeAgo,
+        likes: String(likesCount ?? 0),
+        comments: String(commentsCount ?? 0),
+      },
+    } as any;
+    router.push(href);
+  };
+
+  if (isDeleted) return null;
 
   return (
     <View style={styles.container}>
@@ -105,11 +173,34 @@ const PostCard: React.FC<PostCardProps> = ({
         )}
       </View>
 
-      {/* Text */}
-      <Text style={{ color: 'white', fontSize: 16, lineHeight: 22, marginBottom: 12 }}>{text}</Text>
+      {/* Edit mode or content */}
+      {isEditing ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: '#94a3b8', marginBottom: 4 }}>Edit post</Text>
+          <View style={{ backgroundColor: '#111827', borderRadius: 8, borderWidth: 1, borderColor: '#374151' }}>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              multiline
+              style={{ color: 'white', padding: 12, minHeight: 80 }}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+            <TouchableOpacity onPress={() => setIsEditing(false)} style={styles.btnSecondary}>
+              <Text style={{ color: '#e5e7eb' }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity disabled={savingEdit || !draft.trim()} onPress={saveEdit} style={styles.btnPrimary}>
+              <Text style={{ color: '#e5e7eb' }}>{savingEdit ? 'Saving...' : 'Save'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        // Text
+        <Text style={{ color: 'white', fontSize: 16, lineHeight: 22, marginBottom: 12 }}>{content}</Text>
+      )}
 
       {/* Image */}
-      {imageUrl && (
+      {imageUrl && !isEditing && (
         <Image
           source={{ uri: imageUrl }}
           style={{ width: '100%', height: 192, borderRadius: 12, marginBottom: 12 }}
@@ -117,30 +208,32 @@ const PostCard: React.FC<PostCardProps> = ({
         />
       )}
 
-      {/* Footer Icons */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={{flexDirection: 'row'}}>
-          <ChatBubbleOvalLeftIcon color="gray" size={24} />
-          <Text style={{color: 'white', paddingLeft:4}}>10</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <ArrowPathIcon color="gray" size={24} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{flexDirection: 'row'}} onPress={handleLikePress}>
-          {isLiked ? (
-            <HeartIconSolid color="#ef4444" size={24} />
-          ) : (
-            <HeartIcon color="gray" size={24} />
-          )}
-          <Text style={{color: 'white', paddingLeft:4}}>178</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <ShareIcon color="gray" size={24} />
-        </TouchableOpacity>
-      </View>
+      {/* Footer */}
+      {!isEditing && (
+        <View style={styles.footer}>
+          <TouchableOpacity style={{flexDirection: 'row'}} onPress={openComments}>
+            <ChatBubbleOvalLeftIcon color="gray" size={24} />
+            <Text style={{color: 'white', paddingLeft:4}}>{commentsCount ?? 0}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <ArrowPathIcon color="gray" size={24} />
+          </TouchableOpacity>
+          <TouchableOpacity style={{flexDirection: 'row'}} onPress={handleLikePress}>
+            {isLiked ? (
+              <HeartIconSolid color="#ef4444" size={24} />
+            ) : (
+              <HeartIcon color="gray" size={24} />
+            )}
+            <Text style={{color: 'white', paddingLeft:4}}>{likesCount ?? 0}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <ShareIcon color="gray" size={24} />
+          </TouchableOpacity>
+        </View>
+      )}
 
-      {/* Inline anchored menu next to the post (top-right of card) */}
-      {isSelf && showMenu && (
+      {/* Inline anchored menu */}
+      {isSelf && showMenu && !isEditing && (
         <View style={styles.menuOverlay} pointerEvents="box-none">
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMenu(false)} />
           <View style={styles.menuCardLocal}>
@@ -151,6 +244,25 @@ const PostCard: React.FC<PostCardProps> = ({
             <TouchableOpacity style={styles.menuItem} onPress={handleDeletePress}>
               <Text style={{ color: '#ef4444', fontSize: 16 }}>Delete</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Confirm delete inline sheet */}
+      {confirmDelete && (
+        <View style={styles.menuOverlay} pointerEvents="box-none">
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setConfirmDelete(false)} />
+          <View style={[styles.menuCardLocal, { width: 240 }] }>
+            <Text style={{ color: '#e5e7eb', fontSize: 16, padding: 12 }}>Delete this post?</Text>
+            <View style={styles.divider} />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, padding: 12 }}>
+              <TouchableOpacity onPress={() => setConfirmDelete(false)} style={styles.btnSecondarySmall}>
+                <Text style={{ color: '#e5e7eb' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity disabled={deleting} onPress={confirmDeleteNow} style={styles.btnDangerSmall}>
+                <Text style={{ color: '#fee2e2' }}>{deleting ? 'Deleting...' : 'Delete'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -220,6 +332,30 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#374151',
+  },
+  btnPrimary: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#2563eb',
+    borderRadius: 8,
+  },
+  btnSecondary: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#374151',
+    borderRadius: 8,
+  },
+  btnSecondarySmall: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#374151',
+    borderRadius: 8,
+  },
+  btnDangerSmall: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#991b1b',
+    borderRadius: 8,
   },
 });
 

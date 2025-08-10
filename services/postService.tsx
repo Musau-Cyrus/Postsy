@@ -401,8 +401,128 @@ export const createPost = async (content: string): Promise<Post | null> => {
     }
 };
 
+// Update an existing post's content
+export const updatePost = async (id: string, content: string): Promise<Post | null> => {
+    // Per request: use mutation editPost of type EditPost. We'll try common arg naming variants
+    // while keeping the mutation name fixed to `editPost`.
+    const selection = `{
+        id
+        content
+        createdAt
+        user { id username firstName lastName }
+        author { id username firstName lastName }
+        likesCount
+        commentsCount
+    }`;
+
+    const variants = [
+        { args: '(id: $id, content: $content)', respPaths: ['post', 'updatedPost', null] },
+        { args: '(postId: $id, content: $content)', respPaths: ['post', 'updatedPost', null] },
+    ] as const;
+
+    for (const v of variants) {
+        const query = `
+          mutation EditPost($id: ID!, $content: String!) {
+            editPost${v.args} {
+              ${v.respPaths[0] ? `${v.respPaths[0]} ${selection}` : selection}
+            }
+          }
+        `;
+        try {
+            const result = await tryGraphQLWithSchemes({ query, variables: { id, content } });
+            if (result?.errors) continue;
+            const root = result?.data?.editPost;
+            const node = v.respPaths[0] && root?.[v.respPaths[0]] ? root[v.respPaths[0]] : (root?.id ? root : null);
+            if (!node) continue;
+            const a = node.user || node.author || {};
+            const mapped: Post = {
+                id: node.id,
+                content: node.content,
+                author: {
+                    id: a.id,
+                    username: a.username,
+                    firstName: a.firstName,
+                    lastName: a.lastName,
+                },
+                createdAt: node.createdAt,
+                likesCount: node.likesCount || 0,
+                commentsCount: node.commentsCount || 0,
+            };
+            return mapped;
+        } catch {}
+    }
+    return null;
+};
+
+// Delete a post by id
+export const deletePost = async (id: string): Promise<boolean> => {
+    if (!id) return false;
+    id = String(id).trim();
+
+    // Try safe variants of the same mutation: deletePost of type DeletePost (or boolean),
+    // with common arg names (id | postId | postID) and return shapes. Also try ID/String/Int types.
+    const candidates = [
+        // Object returns (common fields)
+        { varName: 'id', varType: 'ID!', selection: '{ ok success id }' },
+        { varName: 'postId', varType: 'ID!', selection: '{ ok success id }' },
+        { varName: 'postID', varType: 'ID!', selection: '{ ok success id }' },
+        { varName: 'id', varType: 'String!', selection: '{ ok success id }' },
+        { varName: 'postId', varType: 'String!', selection: '{ ok success id }' },
+        { varName: 'id', varType: 'Int!', selection: '{ ok success id }' },
+        { varName: 'postId', varType: 'Int!', selection: '{ ok success id }' },
+        { varName: 'postID', varType: 'Int!', selection: '{ ok success id }' },
+        // Minimal object return (__typename only) to avoid schema field errors
+        { varName: 'id', varType: 'ID!', selection: '{ __typename }' },
+        { varName: 'postId', varType: 'ID!', selection: '{ __typename }' },
+        { varName: 'postID', varType: 'ID!', selection: '{ __typename }' },
+        // Boolean returns
+        { varName: 'id', varType: 'ID!', selection: '' },
+        { varName: 'postId', varType: 'ID!', selection: '' },
+        { varName: 'id', varType: 'Int!', selection: '' },
+        { varName: 'postId', varType: 'Int!', selection: '' },
+    ] as const;
+
+    for (const c of candidates) {
+        const varDef = `$${c.varName}: ${c.varType}`;
+        const arg = `${c.varName}: $${c.varName}`;
+        const query = c.selection
+            ? `\n      mutation DeletePost(${varDef}) {\n        deletePost(${arg}) ${c.selection}\n      }\n    `
+            : `\n      mutation DeletePost(${varDef}) {\n        deletePost(${arg})\n      }\n    `;
+
+        // Coerce value for Int! variants if the id is numeric-like
+        let value: any = id;
+        if (c.varType === 'Int!') {
+            const n = Number(id);
+            value = Number.isFinite(n) ? n : id; // fall back to string if not numeric
+        }
+        const variables: Record<string, any> = { [c.varName]: value };
+        try {
+            const res = await tryGraphQLWithSchemes({ query, variables });
+            if (res?.errors) {
+                try { await handleAuthError(res.errors); } catch {}
+                continue; // try next candidate on schema or other errors
+            }
+            const r = res?.data?.deletePost;
+            if (typeof r === 'boolean') return r === true;
+            if (r && typeof r === 'object') {
+                if (r.ok === true || r.success === true) return true;
+                if (r.id) return true;
+                if (r.deleted === true) return true;
+                if (r.status && String(r.status).toLowerCase() === 'success') return true;
+                if (typeof r.__typename === 'string') return true; // object returned, treat as success
+                if (typeof r.message === 'string' && /deleted|success/i.test(r.message)) return true;
+            }
+            // If no explicit success signal, try next variant
+        } catch {
+            // Ignore and try next variant
+        }
+    }
+
+    return false;
+};
+
+// Combine: feed + current user's posts + other users' posts, de-duplicated and sorted
 export const getPosts = async (): Promise<Post[]> => {
-    // Combine: feed + current user's posts + other users' posts, de-duplicated and sorted
     const collected: Post[] = [];
 
     // 1) Feed (simple list)
@@ -414,6 +534,8 @@ export const getPosts = async (): Promise<Post[]> => {
                     content
                     createdAt
                     user { id username firstName lastName }
+                    likesCount
+                    commentsCount
                 }
             }
         `;
@@ -479,7 +601,7 @@ export const getPosts = async (): Promise<Post[]> => {
                         createdAt: p.createdAt,
                         likesCount: p.likesCount || 0,
                         commentsCount: p.commentsCount || 0,
-                    };
+                    } as Post;
                 });
                 collected.push(...mapped);
             }

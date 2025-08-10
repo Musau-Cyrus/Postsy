@@ -150,10 +150,15 @@ const Home = () => {
                     posts.map((post) => (
                         <PostCard
                             key={post.id}
+                            postId={post.id}
                             username={`${post.author.firstName || ''} ${post.author.lastName || ''}`.trim() || post.author.username}
                             handle={post.author.username}
                             timeAgo={formatTimeAgo(post.createdAt)}
                             text={post.content}
+                            likesCount={post.likesCount}
+                            commentsCount={post.commentsCount}
+                            onDelete={() => setPosts(prev => prev.filter(p => p.id !== post.id))}
+                            onEdit={async () => { await fetchPosts(); }}
                         />
                     ))
                 )}
